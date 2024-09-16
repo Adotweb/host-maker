@@ -1,7 +1,5 @@
 import { invoke } from "@tauri-apps/api/tauri";
-import { create_drag_card } from "./drag_cards"
-import { create_block, Block } from "./block"
-
+import { create_drag_card } from "./model"
 
 let greetInputEl: HTMLInputElement | null;
 let greetMsgEl: HTMLElement | null;

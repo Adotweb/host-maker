@@ -1,22 +1,31 @@
+import { blocks, ReceiveBlock, Block, VarBlock, InitBlock, GetBlock, SendBlock, SplitBlock, construct_block } from "./model"
+
+
 export const selection_option = new Map([
-	["receive message", {}],
-	["split parameter", [
-		"sender_id",
-		"own"
-	]],
-	["variable", ["get", "set"]],
-	["function", null],
-	["action", null],
-	["send message", null],
+	["receive message", ReceiveBlock],
+	["split parameter", SplitBlock],
+	["init variable", InitBlock],
+	["variable", VarBlock],
+	["send message", SendBlock],
+	["get variable", GetBlock]
 ])
 
 
 function create_selector(parent_id : string){
+
+	let element = document.createElement("div");
+
 	
 
 	let selector = document.createElement("select")
 	selector.id = "selector" + parent_id;
 	selector.innerHTML = [...selection_option.keys()].map(s => `<option value="${s}">${s}</option>`).join("");
+
+	let block = new ReceiveBlock(parent_id)
+
+	blocks.set(parent_id, block);
+
+	let appendix = construct_block(block);
 
 	
 
@@ -25,15 +34,24 @@ function create_selector(parent_id : string){
 
 		let parent_card = document.getElementById("card-" + parent_id);
 
+			
 
-		parent_card?.setAttribute("mode", e.target.value);
+		let new_type = selection_option.get(e.target.value);
+
+		let new_block = new new_type(parent_id)
 
 
-		
+		blocks.set(parent_id, new_block)
+
+		console.log(new_block)
 
 	})
 
-	return selector
+	element.appendChild(selector);
+	
+	element.appendChild(appendix)
+
+	return element
 }
 
 
