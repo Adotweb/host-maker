@@ -2,8 +2,13 @@ const state = new Map();
 
 export const blocks = new Map();
 
+type blocktype = "get" | "var" | "join" | "receive" | "send" | "init" | "split" | "btn" | "log" | "through";
+
 export class Block{
 	inputs : Block[];
+
+	input_data : Map<String, any> = new Map();
+
 	outputs : Block[];
 	output_list : any[];
 	
@@ -13,8 +18,12 @@ export class Block{
 	targets : string[] = [];
 	state : string[] = [];
 
-	type : string;
-	constructor(id : string, fields : any, type : string){
+	type : blocktype;
+
+	pass_function  : Function = (inp : Map<String, any>) => inp;
+
+
+	constructor(id : string, fields : any, type : blocktype){
 		this.inputs = [];
 		this.outputs = [];
 		this.id = id;
@@ -56,12 +65,72 @@ export class Block{
 				let name = this.fields.input_name;
 				let value = this.fields.input_value;
 
+
 				state.set(name, value)
+			}
+
+			if(this.type == "get"){
+
 			}
 		}
 
 		console.log(state)	
 			
+	}
+
+	pipe(value : Map<String, any>, source_id : string){
+		
+		if(!this.input_data.has(source_id)){
+			this.input_data.set(source_id, value);
+		}
+
+		if([...this.input_data.keys()].length == this.inputs.length){
+			let value = this.pass_function(this.input_data, this.id);
+	
+			for(const output of this.outputs){
+				output.pipe(value, this.id);
+			}
+
+
+		}
+	}
+}
+
+export class ThroughBlock extends Block{
+	constructor(id : string){
+		super(id, {
+
+		}, "through")
+
+		this.pass_function = (inp : Map<String, any>) => {	
+			console.log(inp, "has passed the through block")
+
+			return inp
+		}
+	}
+}
+
+export class LogBlock extends Block{
+
+	constructor(id : string){
+		super(id, {
+			
+		}, "log")
+
+		this.pass_function = (inp : Map<String, any>) => {
+
+			console.log(inp)
+
+		}
+	}
+
+}
+
+export class JoinBlock extends Block{
+	constructor(id : string){
+		super(id, {
+
+		}, "join")
 	}
 }
 
@@ -76,6 +145,22 @@ export class InitBlock extends Block{
 	
 }
 
+export class ButtonBlock extends Block{
+	constructor(id : string){
+
+		super(id, {
+			button_name : "hello"	
+		}, "btn")
+
+
+	}
+
+
+	trigger(){
+		this.outputs.forEach(sink => sink.pipe(new Map(), this.id))
+	}
+}
+
 export class VarBlock extends Block{
 
 
@@ -83,8 +168,13 @@ export class VarBlock extends Block{
 		super(id, {
 			
 			select_name : [...state.keys()],
-			input_value : "value"
+			input_value : ""
 		}, "var")
+
+		this.pass_function = (input : Map<String, any>) => {	
+			console.log(input);
+			return new Map([["input_value" , this.fields.input_value]])
+		}
 
 	}
 }
@@ -131,7 +221,11 @@ export const block_types = new Map([
 	["init", InitBlock],
 	["get variable", GetBlock],
 	["set variable", VarBlock],
-	["split", SplitBlock]
+	["split", SplitBlock],
+	["through", ThroughBlock],	
+	["button", ButtonBlock],
+
+	["log", LogBlock]
 ])
 
 
@@ -146,10 +240,29 @@ function create_value_selector(block : Block){
 	for(let field_name of fields){
 
 		let field = block.fields[field_name]	
+		
+		if(field_name == "button_name"){
+			let button = document.createElement("button");
+			button.innerHTML = field;
 
+			button.addEventListener("click", () => {
+				let changed_block = blocks.get(block.id);
 
+				changed_block.trigger()
+			})
+
+			value_field.appendChild(button);
+
+			continue;
+		}
+		
 		if(field instanceof Array){
 			let selector = document.createElement("select");
+			
+			selector.addEventListener("mousedown", e => {
+				console.log(e)
+				selector.innerHTML = [...state.keys()].map(s => `<option value="${s}">${s}</option>`).join("")
+			})
 
 			selector.addEventListener("change", (e) => {
 				let new_value = e.target.value
@@ -161,8 +274,8 @@ function create_value_selector(block : Block){
 				changed_block.change_field([field_name], [new_value])
 			})
 				
-			selector.innerHTML = [...state.keys()].map(s => `<option value="${s}">${s}</option>`).join("")
 
+			selector.innerHTML = [...state.keys()].map(s => `<option value="${s}">${s}</option>`).join("")
 			
 
 			value_field.appendChild(selector)	

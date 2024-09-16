@@ -1,5 +1,7 @@
 import { invoke } from "@tauri-apps/api/tauri";
-import { create_drag_card } from "./model"
+import { blocks, create_drag_card } from "./model"
+
+
 
 let greetInputEl: HTMLInputElement | null;
 let greetMsgEl: HTMLElement | null;
@@ -87,7 +89,13 @@ window.addEventListener("DOMContentLoaded", () => {
 					
 					current_connection.push(card.id)
 
-			
+					
+					let from = blocks.get(current_connection[0].replace("card-", ""));
+					let to = blocks.get(current_connection[1].replace("card-", ""));
+
+					console.log(current_connection, blocks)
+
+					to.connect_to_source(from)
 
 					let line = new LeaderLine(
 						document.getElementById(current_connection[0]),
