@@ -74,7 +74,6 @@ export class Block{
 			}
 		}
 
-		console.log(state)	
 			
 	}
 
@@ -85,8 +84,19 @@ export class Block{
 		}
 
 		if([...this.input_data.keys()].length == this.inputs.length){
-			let value = this.pass_function(this.input_data, this.id);
-	
+
+			let all_map = new Map();
+			[...this.input_data].forEach(([key, value]) => {
+					
+				[...value].forEach(([key, val]) => {
+
+					all_map.set(key, val)
+				})
+
+			})
+
+			let value = this.pass_function(all_map, this.id);
+
 			for(const output of this.outputs){
 				output.pipe(value, this.id);
 			}
@@ -103,9 +113,11 @@ export class ThroughBlock extends Block{
 		}, "through")
 
 		this.pass_function = (inp : Map<String, any>) => {	
-			console.log(inp, "has passed the through block")
+
+			inp.set("pass_through_thing", 42)
 
 			return inp
+		
 		}
 	}
 }
@@ -140,6 +152,13 @@ export class InitBlock extends Block{
 			input_name : "",
 			input_value : ""
 		}, "init")
+
+		this.pass_function = (inp : Map<String, any>) => {
+
+
+			inp.set(this.fields.input_name, this.fields.input_value);
+			return inp
+		}
 	}
 
 	
@@ -173,7 +192,10 @@ export class VarBlock extends Block{
 
 		this.pass_function = (input : Map<String, any>) => {	
 			console.log(input);
-			return new Map([["input_value" , this.fields.input_value]])
+
+			input.set(this.fields.select_name, this.fields.input_value)
+
+			return input
 		}
 
 	}
@@ -185,6 +207,13 @@ export class GetBlock extends Block{
 		super(id, {
 			select_name : [...state.keys()]
 		}, "get")
+
+		this.pass_function = (inp : Map<String, any>) => {
+					
+			inp.set(this.fields.select_name, state.get(this.fields.select_name));
+
+			return inp
+		}
 	}
 
 }
@@ -260,7 +289,6 @@ function create_value_selector(block : Block){
 			let selector = document.createElement("select");
 			
 			selector.addEventListener("mousedown", e => {
-				console.log(e)
 				selector.innerHTML = [...state.keys()].map(s => `<option value="${s}">${s}</option>`).join("")
 			})
 
@@ -268,7 +296,6 @@ function create_value_selector(block : Block){
 				let new_value = e.target.value
 
 
-				console.log(field_name)
 				let changed_block = blocks.get(block.id);
 
 				changed_block.change_field([field_name], [new_value])
@@ -296,7 +323,6 @@ function create_value_selector(block : Block){
 				
 				if(!state.has(e.target.value)) return;
 				state.delete(e.target.value)
-				console.log(state)
 			})
 
 			value_field.appendChild(input)
@@ -340,7 +366,6 @@ export function create_drag_card(){
 
 		blocks.set(id, block)
 
-		console.log(blocks)
 
 		let value_field = document.getElementById("value-" + id);
 		

@@ -36,7 +36,7 @@ document.addEventListener("mousemove", (e) => {
 		card_held.style.transform = `translate(${e.pageX - click_position.x}px, ${e.pageY - click_position.y}px)`
 
 
-		lines.forEach((line : any) => line.position())
+		lines.forEach(([line, index]) => line.position())
 	}
 
 })
@@ -77,6 +77,28 @@ window.addEventListener("DOMContentLoaded", () => {
 			card_held = document.getElementById(card.id) || false
 		})	
 
+		card.addEventListener("contextmenu", e => {
+
+				e.preventDefault();
+				let c = document.getElementById(card.id);
+				c?.remove();
+				
+				lines.filter(([line, ids], index) => {
+
+					if(ids.includes(card.id)){
+						
+						return true
+
+					}
+		
+
+					let line = document.getElementById("leader-line-" + (index + 1) + "-line-path");
+					line.parentNode
+					
+				})
+									
+		})
+
 		card.addEventListener("dblclick", _e => {
 
 				
@@ -93,7 +115,6 @@ window.addEventListener("DOMContentLoaded", () => {
 					let from = blocks.get(current_connection[0].replace("card-", ""));
 					let to = blocks.get(current_connection[1].replace("card-", ""));
 
-					console.log(current_connection, blocks)
 
 					to.connect_to_source(from)
 
@@ -101,8 +122,9 @@ window.addEventListener("DOMContentLoaded", () => {
 						document.getElementById(current_connection[0]),
 						document.getElementById(current_connection[1]),
 					)
+
 					
-					lines.push(line)
+					lines.push([line, [from, to]])
 
 					adjacency_matrix.push(current_connection)
 					current_connection = [];
